@@ -1,54 +1,71 @@
-"""Importação das rotas pela API OSRM (roteador que usa dados do OpenStreetMap).
-
-Tudo aqui é PURO, menos a função `buscar_resposta`, que é a única que fala
-com a internet (a "borda" de entrada do programa).
-
-A API só entrega a DISTÂNCIA de cada rota alternativa. A velocidade média e o
-congestionamento são fictícios: vêm de tabelas fixas, escolhidas pela posição da
-rota. Assim o resultado é sempre o mesmo para a mesma resposta (nada de random).
-"""
 import json
 import urllib.request
+from dataclasses import replace
+from functools import reduce
+from itertools import chain
 
-from src.models import Rota
+from src.models import RotaReal
 
-BASE_URL = "http://router.project-osrm.org/route/v1/driving"
+BASE_URL = "https://router.project-osrm.org/route/v1/driving"
+USER_AGENT = "SimuladorDeRotas-ProjetoFaculdade/1.0"
 
-VELOCIDADES_KMH = (40.0, 50.0, 30.0, 60.0, 45.0)
-CONGESTIONAMENTOS = (3.0, 6.5, 8.0, 2.0, 5.0)
-
-
-# ---------- partes puras ----------
 
 def formatar_coordenada(ponto: tuple) -> str:
-    """(longitude, latitude) -> 'lon,lat' (a OSRM pede longitude primeiro)."""
-    longitude, latitude = ponto
+    latitude, longitude = ponto
     return f"{longitude},{latitude}"
 
 
-def montar_url(origem: tuple, destino: tuple, alternativas: int = 3) -> str:
-    coordenadas = ";".join(map(formatar_coordenada, (origem, destino)))
-    return f"{BASE_URL}/{coordenadas}?alternatives={alternativas}&overview=false"
+def montar_url(pontos: tuple, alternativas: int = 3) -> str:
+    coordenadas = ";".join(map(formatar_coordenada, pontos))
+    return (f"{BASE_URL}/{coordenadas}?alternatives={alternativas}"
+            "&overview=full&geometries=geojson&steps=true")
 
 
-def valor_da_tabela(tabela: tuple, indice: int) -> float:
-    """Pega o valor pela posição, voltando ao início quando a tabela acaba."""
-    return tabela[indice % len(tabela)]
+def pontos_de_desvio(origem: tuple, destino: tuple, fracao: float = 0.3) -> tuple:
+    meio = ((origem[0] + destino[0]) / 2, (origem[1] + destino[1]) / 2)
+    dlat, dlon = destino[0] - origem[0], destino[1] - origem[1]
+    return ((meio[0] - dlon * fracao, meio[1] + dlat * fracao),
+            (meio[0] + dlon * fracao, meio[1] - dlat * fracao))
 
 
-def rota_de_item(item: tuple) -> Rota:
-    """(posição, rota da API) -> Rota. A API dá a distância em metros."""
+def sem_repetidas(rotas: tuple) -> tuple:
+    unicas = reduce(
+        lambda acc, r: acc if any(map(lambda u: round(u.distancia_km, 1) == round(r.distancia_km, 1), acc))
+        else acc + (r,),
+        rotas, ())
+    return tuple(map(lambda item: replace(item[1], nome=f"Rota {item[0]}"), enumerate(unicas, start=1)))
+
+
+def passos_da_rota(dados: dict) -> tuple:
+    return tuple(chain.from_iterable(map(lambda leg: leg.get("steps", []), dados.get("legs", []))))
+
+
+def somar_rua(acc: dict, passo: dict) -> dict:
+    nome = passo.get("name") or "(via sem nome)"
+    return {**acc, nome: acc.get(nome, 0.0) + passo.get("distance", 0.0)}
+
+
+def ruas_da_rota(dados: dict) -> tuple:
+    por_rua = reduce(somar_rua, passos_da_rota(dados), {})
+    return tuple(sorted(por_rua.items(), key=lambda item: item[1], reverse=True))
+
+
+def geometria_da_rota(dados: dict) -> tuple:
+    return tuple(map(lambda c: (c[1], c[0]), dados["geometry"]["coordinates"]))
+
+
+def rota_de_item(item: tuple) -> RotaReal:
     posicao, dados = item
-    return Rota(
+    return RotaReal(
         nome=f"Rota {posicao}",
         distancia_km=dados["distance"] / 1000,
-        velocidade_media_kmh=valor_da_tabela(VELOCIDADES_KMH, posicao - 1),
-        congestionamento=valor_da_tabela(CONGESTIONAMENTOS, posicao - 1),
+        duracao_min=dados["duration"] / 60,
+        geometria=geometria_da_rota(dados),
+        ruas=ruas_da_rota(dados),
     )
 
 
 def rotas_da_resposta(resposta: dict) -> tuple:
-    """Resposta da OSRM -> tupla de Rota. Resposta com erro vira tupla vazia."""
     return (
         ()
         if resposta.get("code") != "Ok"
@@ -56,13 +73,18 @@ def rotas_da_resposta(resposta: dict) -> tuple:
     )
 
 
-# ---------- borda impura (internet) ----------
-
-def buscar_resposta(url: str, timeout: int = 10) -> dict:
-    with urllib.request.urlopen(url, timeout=timeout) as resposta:
-        return json.load(resposta)
+def buscar_resposta(url: str, timeout: int = 30) -> dict:
+    try:
+        pedido = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(pedido, timeout=timeout) as resposta:
+            return json.load(resposta)
+    except Exception:
+        return {}
 
 
 def buscar_rotas(origem: tuple, destino: tuple, alternativas: int = 3) -> tuple:
-    """Junta tudo: monta a URL, busca na API e converte em Rotas."""
-    return rotas_da_resposta(buscar_resposta(montar_url(origem, destino, alternativas)))
+    diretas = rotas_da_resposta(buscar_resposta(montar_url((origem, destino), alternativas)))
+    extras = (() if len(diretas) >= alternativas or not diretas else tuple(chain.from_iterable(map(
+        lambda desvio: rotas_da_resposta(buscar_resposta(montar_url((origem, desvio, destino), 0))),
+        pontos_de_desvio(origem, destino)))))
+    return sem_repetidas(diretas + extras)

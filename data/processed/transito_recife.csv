@@ -1,0 +1,61 @@
+regiao,periodo,indice_congestionamento,semaforo_verde_s,semaforo_vermelho_s,fonte
+Boa Viagem,manha,5.3,33.0,33.0,ficticio
+Boa Viagem,tarde,4.4,33.0,33.0,ficticio
+Boa Viagem,noite,2.9,33.0,33.0,ficticio
+Boa Viagem,pico,7.2,33.0,33.0,ficticio
+Pina,manha,4.9,45.0,51.0,ficticio
+Pina,tarde,4.5,45.0,51.0,ficticio
+Pina,noite,2.5,45.0,51.0,ficticio
+Pina,pico,6.7,45.0,51.0,ficticio
+Imbiribeira,manha,5.0,34.0,32.0,ficticio
+Imbiribeira,tarde,4.1,34.0,32.0,ficticio
+Imbiribeira,noite,2.5,34.0,32.0,ficticio
+Imbiribeira,pico,6.8,34.0,32.0,ficticio
+Recife Antigo,manha,5.9,51.0,55.0,ficticio
+Recife Antigo,tarde,5.2,51.0,55.0,ficticio
+Recife Antigo,noite,3.4,51.0,55.0,ficticio
+Recife Antigo,pico,8.2,51.0,55.0,ficticio
+Centro,manha,6.5,53.0,63.0,ficticio
+Centro,tarde,5.5,53.0,63.0,ficticio
+Centro,noite,2.9,53.0,63.0,ficticio
+Centro,pico,8.6,53.0,63.0,ficticio
+Boa Vista,manha,5.6,45.0,41.0,ficticio
+Boa Vista,tarde,5.3,45.0,41.0,ficticio
+Boa Vista,noite,3.3,45.0,41.0,ficticio
+Boa Vista,pico,8.8,45.0,41.0,ficticio
+Afogados,manha,5.1,36.0,50.0,ficticio
+Afogados,tarde,4.1,36.0,50.0,ficticio
+Afogados,noite,3.0,36.0,50.0,ficticio
+Afogados,pico,7.0,36.0,50.0,ficticio
+Graças,manha,5.4,47.0,69.0,ficticio
+Graças,tarde,4.9,47.0,69.0,ficticio
+Graças,noite,2.7,47.0,69.0,ficticio
+Graças,pico,7.8,47.0,69.0,ficticio
+Madalena,manha,4.6,25.0,41.0,ficticio
+Madalena,tarde,4.8,25.0,41.0,ficticio
+Madalena,noite,3.1,25.0,41.0,ficticio
+Madalena,pico,6.6,25.0,41.0,ficticio
+Casa Forte,manha,4.5,46.0,60.0,ficticio
+Casa Forte,tarde,3.8,46.0,60.0,ficticio
+Casa Forte,noite,2.6,46.0,60.0,ficticio
+Casa Forte,pico,6.6,46.0,60.0,ficticio
+Cordeiro,manha,5.0,30.0,36.0,ficticio
+Cordeiro,tarde,3.8,30.0,36.0,ficticio
+Cordeiro,noite,2.5,30.0,36.0,ficticio
+Cordeiro,pico,6.3,30.0,36.0,ficticio
+Várzea,manha,4.4,29.0,47.0,ficticio
+Várzea,tarde,4.2,29.0,47.0,ficticio
+Várzea,noite,2.6,29.0,47.0,ficticio
+Várzea,pico,5.6,29.0,47.0,ficticio
+Olinda,manha,3.8,29.0,47.0,ficticio
+Olinda,tarde,3.7,29.0,47.0,ficticio
+Olinda,noite,1.9,29.0,47.0,ficticio
+Olinda,pico,6.1,29.0,47.0,ficticio
+Jaboatão,manha,5.2,57.0,59.0,ficticio
+Jaboatão,tarde,3.8,57.0,59.0,ficticio
+Jaboatão,noite,2.4,57.0,59.0,ficticio
+Jaboatão,pico,7.0,57.0,59.0,ficticio
+Camaragibe,manha,4.1,34.0,42.0,ficticio
+Camaragibe,tarde,3.8,34.0,42.0,ficticio
+Camaragibe,noite,2.0,34.0,42.0,ficticio
+Camaragibe,pico,6.1,34.0,42.0,ficticio
