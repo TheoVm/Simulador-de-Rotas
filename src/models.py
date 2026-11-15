@@ -1,4 +1,3 @@
-"""Dados imutáveis (frozen=True): depois de criados, nenhum valor muda."""
 from dataclasses import dataclass
 
 
@@ -7,8 +6,8 @@ class Rota:
     nome: str
     distancia_km: float
     velocidade_media_kmh: float
-    congestionamento: float  # 0 (livre) a 10 (parado), valor fictício
-    tempo_min: float = 0.0   # calculado: distância / velocidade * 60
+    congestionamento: float
+    tempo_min: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -28,4 +27,48 @@ class Maximos:
 @dataclass(frozen=True)
 class RotaPontuada:
     rota: Rota
-    pontuacao: float  # menor = melhor
+    pontuacao: float
+
+
+@dataclass(frozen=True)
+class RotaReal:
+    nome: str
+    distancia_km: float
+    duracao_min: float
+    geometria: tuple
+    ruas: tuple
+
+
+@dataclass(frozen=True)
+class Regiao:
+    nome: str
+    latitude: float
+    longitude: float
+    fator_transito: float
+
+
+@dataclass(frozen=True)
+class LinhaTransito:
+    regiao: str
+    periodo: str
+    indice_congestionamento: float
+    semaforo_verde_s: float
+    semaforo_vermelho_s: float
+    fonte: str
+
+
+@dataclass(frozen=True)
+class Resumo:
+    nome: str
+    distancia_km: float
+    tempo_min: float
+    congestionamento: float
+    pontuacao: float
+    total_ranking: int
+
+
+@dataclass(frozen=True)
+class Resultado:
+    ranking: tuple
+    resumo: object
+    mensagem: str
