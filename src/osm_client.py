@@ -1,5 +1,6 @@
 import json
 import re
+import time
 import urllib.parse
 import urllib.request
 from itertools import chain, pairwise
@@ -89,7 +90,26 @@ def buscar_json(url: str, dados: bytes = None, timeout: int = 60):
         return None
 
 
-geocodificar = lambda endereco: local_da_resposta(buscar_json(montar_url_nominatim(endereco)))
+# Borda impura: faz a requisição e espera 1 s (a política do Nominatim pede no máximo 1 pedido por segundo).
+def buscar_local(endereco: str) -> tuple:
+    time.sleep(1)
+    return local_da_resposta(buscar_json(montar_url_nominatim(endereco)))
+
+
+partes_do_endereco = lambda texto: tuple(filter(None, map(str.strip, texto.split(","))))
+
+# Do mais específico ao mais genérico: completo, rua+número+cidade, rua+bairro+cidade, rua+cidade.
+variantes_do_endereco = lambda texto: (
+    lambda partes: tuple(dict.fromkeys(map(", ".join, (
+        partes,
+        partes[:2] + partes[-1:],
+        partes[:1] + partes[2:],
+        partes[:1] + partes[-1:],
+    ))))
+)(partes_do_endereco(texto))
+
+geocodificar = lambda endereco: next(
+    filter(None, map(buscar_local, variantes_do_endereco(endereco))), ())
 
 corpo_overpass = lambda rotas: urllib.parse.urlencode(
     {"data": montar_consulta_semaforos(caixa_da_geometria(rotas))}).encode()
