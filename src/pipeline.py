@@ -1,13 +1,16 @@
 from functools import partial
+from itertools import pairwise
+from math import ceil
 
 from src.filters import dentro_dos_limites
-from src.models import Resultado, Rota
+from src.models import VIA_SEM_NOME, Resultado, Rota
 from src.osm_client import semaforos_na_rota
 from src.recommend import ranquear, resumir
 from src.scoring import avaliar_notas, com_tempo, compor
 
 AMARELO_S = 4.0
 IMPACTO_TRANSITO = 0.06
+INTERVALO_SEMAFORO_M = 300.0
 
 
 def distancia_aprox_m(a: tuple, b: tuple) -> float:
@@ -32,6 +35,24 @@ def atraso_semaforos_min(qtd: int, verde_s: float, vermelho_s: float) -> float:
     return qtd * vermelho_s ** 2 / (2 * ciclo) / 60
 
 
+def semaforos_por_distancia(metros: float) -> int:
+    return max(0, ceil(metros / INTERVALO_SEMAFORO_M) - 1)
+
+
+def troca_com_semaforo(par: tuple) -> bool:
+    return all(map(lambda trecho: trecho[0] != VIA_SEM_NOME, par))
+
+
+def trocas_de_rua(trajeto: tuple) -> int:
+    return len(tuple(filter(troca_com_semaforo, pairwise(trajeto))))
+
+
+def semaforos_estimados(trajeto: tuple, distancia_m: float) -> int:
+    return (trocas_de_rua(trajeto) + sum(map(lambda trecho: semaforos_por_distancia(trecho[1]), trajeto))
+            if trajeto
+            else semaforos_por_distancia(distancia_m))
+
+
 def rota_analisada(regioes: tuple, tabela, periodo: str, semaforos: tuple, rota_real) -> Rota:
     linhas = tuple(map(
         lambda ponto: tabela[(regiao_mais_proxima(regioes, ponto).nome, periodo)],
@@ -39,15 +60,19 @@ def rota_analisada(regioes: tuple, tabela, periodo: str, semaforos: tuple, rota_
     cong = media(tuple(map(lambda l: l.indice_congestionamento, linhas)))
     verde = media(tuple(map(lambda l: l.semaforo_verde_s, linhas)))
     vermelho = media(tuple(map(lambda l: l.semaforo_vermelho_s, linhas)))
-    qtd = semaforos_na_rota(rota_real.geometria, semaforos)
+    reais = semaforos_na_rota(rota_real.geometria, semaforos)
+    usou_estimativa = reais == 0
+    qtd = semaforos_estimados(rota_real.trajeto, rota_real.distancia_km * 1000) if usou_estimativa else reais
+    rotulo = "semáforos estimados" if usou_estimativa else "semáforos"
     minutos = (rota_real.duracao_min * (1 + IMPACTO_TRANSITO * cong)
                + atraso_semaforos_min(qtd, verde, vermelho))
     principais = ", ".join(map(lambda r: r[0], rota_real.ruas[:2]))
     return Rota(
-        nome=f"{rota_real.nome} via {principais} [{qtd} semáforos]",
+        nome=f"{rota_real.nome} via {principais} [{qtd} {rotulo}]",
         distancia_km=round(rota_real.distancia_km, 2),
         velocidade_media_kmh=round(rota_real.distancia_km / minutos * 60, 2),
         congestionamento=round(cong, 1),
+        trajeto=rota_real.trajeto,
     )
 
 

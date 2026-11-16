@@ -4,7 +4,7 @@ from dataclasses import replace
 from functools import reduce
 from itertools import chain
 
-from src.models import RotaReal
+from src.models import VIA_SEM_NOME, RotaReal
 
 BASE_URL = "https://router.project-osrm.org/route/v1/driving"
 USER_AGENT = "SimuladorDeRotas-ProjetoFaculdade/1.0"
@@ -41,13 +41,27 @@ def passos_da_rota(dados: dict) -> tuple:
 
 
 def somar_rua(acc: dict, passo: dict) -> dict:
-    nome = passo.get("name") or "(via sem nome)"
+    nome = passo.get("name") or VIA_SEM_NOME
     return {**acc, nome: acc.get(nome, 0.0) + passo.get("distance", 0.0)}
 
 
 def ruas_da_rota(dados: dict) -> tuple:
     por_rua = reduce(somar_rua, passos_da_rota(dados), {})
     return tuple(sorted(por_rua.items(), key=lambda item: item[1], reverse=True))
+
+
+def juntar_trecho(acc: tuple, trecho: tuple) -> tuple:
+    nome, metros = trecho
+    return (acc[:-1] + ((nome, acc[-1][1] + metros),)
+            if acc and acc[-1][0] == nome
+            else acc + (trecho,))
+
+
+def trajeto_da_rota(dados: dict) -> tuple:
+    trechos = tuple(map(
+        lambda passo: (passo.get("name") or VIA_SEM_NOME, passo.get("distance", 0.0)),
+        filter(lambda passo: passo.get("distance", 0.0) > 0, passos_da_rota(dados))))
+    return reduce(juntar_trecho, trechos, ())
 
 
 def geometria_da_rota(dados: dict) -> tuple:
@@ -62,6 +76,7 @@ def rota_de_item(item: tuple) -> RotaReal:
         duracao_min=dados["duration"] / 60,
         geometria=geometria_da_rota(dados),
         ruas=ruas_da_rota(dados),
+        trajeto=trajeto_da_rota(dados),
     )
 
 

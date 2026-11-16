@@ -40,6 +40,28 @@ def formatar_resultado(resultado, objetivo: str, periodo: str) -> str:
             f"{ranking}{recomendacao}")
 
 
+def formatar_metros(metros: float) -> str:
+    return f"{metros / 1000:.2f} km" if metros >= 1000 else f"{metros:.0f} m"
+
+
+def formatar_trecho(item: tuple) -> str:
+    posicao, (rua, metros) = item
+    return f"  {posicao:>2}. {rua} ({formatar_metros(metros)})"
+
+
+def formatar_trajeto(nota, origem: str, destino: str) -> str:
+    trajeto = nota.rota.trajeto
+    ruas = ("\n".join(map(formatar_trecho, enumerate(trajeto, start=1)))
+            if trajeto else "  (trajeto indisponível)")
+    return (f"\nTrajeto — {nota.rota.nome}\n"
+            f"Origem : {origem}\n{ruas}\nDestino: {destino}")
+
+
+def indice_ou_none(total: int, texto: str):
+    escolha = texto.strip()
+    return int(escolha) if escolha.isdigit() and 0 <= int(escolha) <= total else None
+
+
 def endereco_ou_none(texto: str):
     return texto.strip() if endereco_valido(texto) else None
 
@@ -81,6 +103,20 @@ def perguntar_sim_nao(pergunta: str) -> bool:
     return eh_sim(input(f"{pergunta} [s/n]: "))
 
 
+def explorar(resultado, origem: str, destino: str) -> None:
+    total = len(resultado.ranking)
+    if total == 0:
+        return
+    escolha = perguntar(
+        f"\nDigite o número da rota para ver as ruas (1-{total}) ou 0 para continuar: ",
+        partial(indice_ou_none, total),
+        f"  Digite um número de 0 a {total}.")
+    if escolha == 0:
+        return
+    print(formatar_trajeto(resultado.ranking[escolha - 1], origem, destino))
+    explorar(resultado, origem, destino)
+
+
 def simular(tabela) -> None:
     print(f"\nInforme os endereços no formato: {FORMATO}")
     print(f"Exemplo: {EXEMPLO}\n")
@@ -102,13 +138,14 @@ def simular(tabela) -> None:
     rotas_reais = buscar_rotas(origem[:2], destino[:2])
     semaforos = buscar_semaforos(rotas_reais) if rotas_reais else ()
     if semaforos is None:
-        print("Aviso: não foi possível obter os semáforos do OSM; considerando 0.\n")
+        print("Aviso: não foi possível obter os semáforos do OSM; usando semáforos estimados.\n")
 
     resultado = executar(
         REGIOES, tabela, periodo, semaforos or (), rotas_reais, OBJETIVOS[objetivo],
         Maximos(distancia=float("inf"), tempo=MAX_TEMPO_MIN, congestionamento=MAX_CONGESTIONAMENTO),
     )
     print("\n" + formatar_resultado(resultado, objetivo, periodo))
+    explorar(resultado, origem[2], destino[2])
 
 
 def sessao(tabela) -> None:
