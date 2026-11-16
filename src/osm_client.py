@@ -16,9 +16,13 @@ OVERPASS_URLS = (
 USER_AGENT = "SimuladorDeRotas-ProjetoFaculdade/1.0"
 CIDADES_RMR = ("recife", "olinda", "jaboatão", "jaboatao", "camaragibe")
 
-remover_complemento = lambda texto: re.sub(
-    r",?\s*\b(apt|apto|ap|apartamento|bloco|bl|sala|casa)\b\.?\s*\w+", "",
-    texto, flags=re.IGNORECASE).strip(" ,")
+# O complemento é a palavra-chave seguida de número ou de uma letra só ("apt 301", "bloco B").
+# Assim "Casa Forte" (bairro) não é confundido com "casa 2" (complemento).
+PADRAO_COMPLEMENTO = re.compile(
+    r",?\s*\b(apt|apto|ap|apartamento|bloco|bl|sala|casa)\b\.?\s*(\d\w*|[a-z]\b)",
+    re.IGNORECASE)
+
+remover_complemento = lambda texto: PADRAO_COMPLEMENTO.sub("", texto).strip(" ,")
 
 sufixo_da_cidade = lambda texto: (
     ", Pernambuco, Brasil"

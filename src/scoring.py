@@ -4,7 +4,8 @@ from operator import mul
 
 from src.models import Maximos, Pesos, Rota, RotaPontuada
 
-calcular_tempo_min = lambda distancia_km, velocidade_kmh: distancia_km / velocidade_kmh * 60
+calcular_tempo_min = lambda distancia_km, velocidade_kmh: (
+    0.0 if velocidade_kmh == 0 else distancia_km / velocidade_kmh * 60)
 
 com_tempo = lambda rota: replace(
     rota,

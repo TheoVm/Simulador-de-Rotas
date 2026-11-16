@@ -63,10 +63,14 @@ rotulo_dos_semaforos = lambda estimado: "semáforos estimados" if estimado else 
 nome_da_rota = lambda rota_real, qtd, estimado: (
     f"{rota_real.nome} via {ruas_principais(rota_real)} [{qtd} {rotulo_dos_semaforos(estimado)}]")
 
+# Rota de distância 0 (origem igual ao destino) tem 0 minuto: a velocidade fica 0 em vez de dividir por zero.
+velocidade_media = lambda distancia_km, minutos: (
+    0.0 if minutos == 0 else round(distancia_km / minutos * 60, 2))
+
 rota_com_dados = lambda rota_real, linhas, qtd, estimado: Rota(
     nome=nome_da_rota(rota_real, qtd, estimado),
     distancia_km=round(rota_real.distancia_km, 2),
-    velocidade_media_kmh=round(rota_real.distancia_km / minutos_da_rota(rota_real, linhas, qtd) * 60, 2),
+    velocidade_media_kmh=velocidade_media(rota_real.distancia_km, minutos_da_rota(rota_real, linhas, qtd)),
     congestionamento=round(media_do_campo("indice_congestionamento", linhas), 1),
     trajeto=rota_real.trajeto,
 )

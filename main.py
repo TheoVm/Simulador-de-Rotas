@@ -14,7 +14,10 @@ from src.regioes import PERIODOS, REGIOES
 CSV_TRANSITO = os.path.join("data", "processed", "transito_recife.csv")
 FORMATO = "Rua/Avenida, número, Bairro, Cidade"
 EXEMPLO = "Rua Marechal Deodoro, 432, Boa Vista, Recife"
-PADRAO_ENDERECO = re.compile(r"^[^,\d]+,\s*\d+[A-Za-z]?\s*(,\s*[^,]+){1,2}$")
+# Rua (pode ter dígitos, ex.: "Rua 7 de Setembro", "BR-101"), número ("432", "10-B" ou "s/n"),
+# com ou sem vírgula antes do número, seguido de bairro e/ou cidade.
+PADRAO_ENDERECO = re.compile(
+    r"^[^,]+?[,\s]\s*(\d+[A-Za-z]?(-\w+)?|s/n)\s*(,\s*[^,]+){1,2}$", re.IGNORECASE)
 MAX_TEMPO_MIN = 120.0
 MAX_CONGESTIONAMENTO = 8.5
 
@@ -26,7 +29,7 @@ endereco_ou_none = lambda texto: texto.strip() if endereco_valido(texto) else No
 
 opcao_ou_none = lambda opcoes, texto: (
     lambda escolha: opcoes[int(escolha) - 1]
-    if escolha.isdigit() and 1 <= int(escolha) <= len(opcoes)
+    if escolha.isdecimal() and 1 <= int(escolha) <= len(opcoes)
     else None
 )(texto.strip())
 
