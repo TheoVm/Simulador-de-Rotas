@@ -57,9 +57,6 @@ formatar_resultado = lambda resultado, objetivo, periodo: (
     f"Objetivo: {objetivo} | período: {periodo}\n{resultado.mensagem}\n\n"
     f"{formatar_ranking(resultado.ranking)}{formatar_recomendacao(resultado.resumo)}")
 
-
-# ---------- Interface com o usuário (def: usa input/print) ----------
-
 def perguntar(pergunta: str, converter, mensagem_erro: str):
     resposta = converter(input(pergunta))
     if resposta is not None:
