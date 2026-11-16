@@ -76,8 +76,6 @@ rotas_da_resposta = lambda resposta: (
     else tuple(map(rota_de_item, enumerate(resposta["routes"], start=1)))
 )
 
-
-# Borda impura: precisa de try/except, que não existe como expressão (não dá para ser lambda).
 def buscar_resposta(url: str, timeout: int = 30) -> dict:
     try:
         pedido = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})

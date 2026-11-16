@@ -16,8 +16,6 @@ OVERPASS_URLS = (
 USER_AGENT = "SimuladorDeRotas-ProjetoFaculdade/1.0"
 CIDADES_RMR = ("recife", "olinda", "jaboatão", "jaboatao", "camaragibe")
 
-# O complemento é a palavra-chave seguida de número ou de uma letra só ("apt 301", "bloco B").
-# Assim "Casa Forte" (bairro) não é confundido com "casa 2" (complemento).
 PADRAO_COMPLEMENTO = re.compile(
     r",?\s*\b(apt|apto|ap|apartamento|bloco|bl|sala|casa)\b\.?\s*(\d\w*|[a-z]\b)",
     re.IGNORECASE)
@@ -84,7 +82,6 @@ semaforos_na_rota = lambda geometria, semaforos, limite_m=25.0: len(tuple(filter
     lambda s: distancia_ponto_rota_m(geometria, s) <= limite_m, semaforos)))
 
 
-# Borda impura: precisa de try/except, que não existe como expressão (não dá para ser lambda).
 def buscar_json(url: str, dados: bytes = None, timeout: int = 60):
     try:
         pedido = urllib.request.Request(url, data=dados, headers={"User-Agent": USER_AGENT})
@@ -94,7 +91,6 @@ def buscar_json(url: str, dados: bytes = None, timeout: int = 60):
         return None
 
 
-# Borda impura: faz a requisição e espera 1 s (a política do Nominatim pede no máximo 1 pedido por segundo).
 def buscar_local(endereco: str) -> tuple:
     time.sleep(1)
     return local_da_resposta(buscar_json(montar_url_nominatim(endereco)))
@@ -102,7 +98,6 @@ def buscar_local(endereco: str) -> tuple:
 
 partes_do_endereco = lambda texto: tuple(filter(None, map(str.strip, texto.split(","))))
 
-# Do mais específico ao mais genérico: completo, rua+número+cidade, rua+bairro+cidade, rua+cidade.
 variantes_do_endereco = lambda texto: (
     lambda partes: tuple(dict.fromkeys(map(", ".join, (
         partes,

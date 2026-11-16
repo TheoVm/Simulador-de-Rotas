@@ -42,8 +42,6 @@ minutos_da_rota = lambda rota_real, linhas, qtd: (
 
 ruas_principais = lambda rota_real: ", ".join(map(itemgetter(0), rota_real.ruas[:2]))
 
-# Estimativa usada quando o OSM não encontra nenhum semáforo na rota:
-# 1 semáforo a cada INTERVALO_SEMAFORO_M em cada trecho + 1 a cada troca entre ruas com nome.
 semaforos_por_distancia = lambda metros: max(0, ceil(metros / INTERVALO_SEMAFORO_M) - 1)
 
 troca_com_semaforo = lambda par: all(map(lambda trecho: trecho[0] != VIA_SEM_NOME, par))
@@ -63,7 +61,6 @@ rotulo_dos_semaforos = lambda estimado: "semáforos estimados" if estimado else 
 nome_da_rota = lambda rota_real, qtd, estimado: (
     f"{rota_real.nome} via {ruas_principais(rota_real)} [{qtd} {rotulo_dos_semaforos(estimado)}]")
 
-# Rota de distância 0 (origem igual ao destino) tem 0 minuto: a velocidade fica 0 em vez de dividir por zero.
 velocidade_media = lambda distancia_km, minutos: (
     0.0 if minutos == 0 else round(distancia_km / minutos * 60, 2))
 
