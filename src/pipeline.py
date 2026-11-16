@@ -1,14 +1,17 @@
 from functools import partial
+from itertools import pairwise
+from math import ceil
 from operator import attrgetter, itemgetter
 
 from src.filters import dentro_dos_limites
-from src.models import Resultado, Rota
+from src.models import VIA_SEM_NOME, Resultado, Rota
 from src.osm_client import semaforos_na_rota
 from src.recommend import ranquear, resumir
 from src.scoring import avaliar_notas, com_tempo, compor
 
 AMARELO_S = 4.0
 IMPACTO_TRANSITO = 0.06
+INTERVALO_SEMAFORO_M = 300.0
 
 distancia_aprox_m = lambda a, b: ((a[0] - b[0]) ** 2 + ((a[1] - b[1]) * 0.99) ** 2) ** 0.5 * 111_000
 
@@ -39,20 +42,43 @@ minutos_da_rota = lambda rota_real, linhas, qtd: (
 
 ruas_principais = lambda rota_real: ", ".join(map(itemgetter(0), rota_real.ruas[:2]))
 
-nome_da_rota = lambda rota_real, qtd: f"{rota_real.nome} via {ruas_principais(rota_real)} [{qtd} semáforos]"
+# Estimativa usada quando o OSM não encontra nenhum semáforo na rota:
+# 1 semáforo a cada INTERVALO_SEMAFORO_M em cada trecho + 1 a cada troca entre ruas com nome.
+semaforos_por_distancia = lambda metros: max(0, ceil(metros / INTERVALO_SEMAFORO_M) - 1)
 
-rota_com_dados = lambda rota_real, linhas, qtd: Rota(
-    nome=nome_da_rota(rota_real, qtd),
+troca_com_semaforo = lambda par: all(map(lambda trecho: trecho[0] != VIA_SEM_NOME, par))
+
+trocas_de_rua = lambda trajeto: len(tuple(filter(troca_com_semaforo, pairwise(trajeto))))
+
+semaforos_estimados = lambda trajeto, distancia_m: (
+    trocas_de_rua(trajeto) + sum(map(lambda trecho: semaforos_por_distancia(trecho[1]), trajeto))
+    if trajeto
+    else semaforos_por_distancia(distancia_m))
+
+quantidade_de_semaforos = lambda rota_real, reais: (
+    reais if reais > 0 else semaforos_estimados(rota_real.trajeto, rota_real.distancia_km * 1000))
+
+rotulo_dos_semaforos = lambda estimado: "semáforos estimados" if estimado else "semáforos"
+
+nome_da_rota = lambda rota_real, qtd, estimado: (
+    f"{rota_real.nome} via {ruas_principais(rota_real)} [{qtd} {rotulo_dos_semaforos(estimado)}]")
+
+rota_com_dados = lambda rota_real, linhas, qtd, estimado: Rota(
+    nome=nome_da_rota(rota_real, qtd, estimado),
     distancia_km=round(rota_real.distancia_km, 2),
     velocidade_media_kmh=round(rota_real.distancia_km / minutos_da_rota(rota_real, linhas, qtd) * 60, 2),
     congestionamento=round(media_do_campo("indice_congestionamento", linhas), 1),
+    trajeto=rota_real.trajeto,
 )
 
-rota_analisada = lambda regioes, tabela, periodo, semaforos, rota_real: rota_com_dados(
-    rota_real,
-    linhas_da_rota(regioes, tabela, periodo, rota_real),
-    semaforos_na_rota(rota_real.geometria, semaforos),
-)
+rota_analisada = lambda regioes, tabela, periodo, semaforos, rota_real: (
+    lambda reais: rota_com_dados(
+        rota_real,
+        linhas_da_rota(regioes, tabela, periodo, rota_real),
+        quantidade_de_semaforos(rota_real, reais),
+        reais == 0,
+    )
+)(semaforos_na_rota(rota_real.geometria, semaforos))
 
 processar = lambda pesos, limites, rotas: compor(
     partial(map, com_tempo),

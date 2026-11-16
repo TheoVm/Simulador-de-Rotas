@@ -101,7 +101,7 @@ def simular(tabela) -> None:
     rotas_reais = buscar_rotas(origem[:2], destino[:2])
     semaforos = buscar_semaforos(rotas_reais) if rotas_reais else ()
     if semaforos is None:
-        print("Aviso: não foi possível obter os semáforos do OSM; considerando 0.\n")
+        print("Aviso: não foi possível obter os semáforos do OSM; usando semáforos estimados.\n")
 
     resultado = executar(
         REGIOES, tabela, periodo, semaforos or (), rotas_reais, OBJETIVOS[objetivo],

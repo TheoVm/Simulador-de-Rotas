@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+VIA_SEM_NOME = "(via sem nome)"
+
 
 @dataclass(frozen=True)
 class Rota:
@@ -8,6 +10,7 @@ class Rota:
     velocidade_media_kmh: float
     congestionamento: float
     tempo_min: float = 0.0
+    trajeto: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -37,6 +40,7 @@ class RotaReal:
     duracao_min: float
     geometria: tuple
     ruas: tuple
+    trajeto: tuple = ()
 
 
 @dataclass(frozen=True)
